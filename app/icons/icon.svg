@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Five Dice Push icon">
+  <rect width="512" height="512" rx="96" fill="#1f6f5b"/>
+  <path d="M132 151c0-28 23-51 51-51h146c28 0 51 23 51 51v210c0 28-23 51-51 51H183c-28 0-51-23-51-51V151Z" fill="#fffdf8"/>
+  <path d="M183 100h146c28 0 51 23 51 51v34H132v-34c0-28 23-51 51-51Z" fill="#d9982f"/>
+  <g fill="#171311">
+    <circle cx="198" cy="204" r="24"/>
+    <circle cx="314" cy="204" r="24"/>
+    <circle cx="198" cy="308" r="24"/>
+    <circle cx="314" cy="308" r="24"/>
+    <circle cx="256" cy="256" r="24"/>
+  </g>
+</svg>

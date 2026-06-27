@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1f6f5b">
+    <title>Five Dice Push</title>
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="./icons/icon.svg">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="scoreboard" aria-label="Match scoreboard">
+        <div>
+          <p class="eyebrow">Five Dice Push</p>
+          <h1>Roll the best multiples in three rolls or less.</h1>
+        </div>
+        <div class="score-grid">
+          <div class="player-score" data-active-player="0">
+            <span id="playerOneName">Player 1</span>
+            <strong id="playerOneScore">0</strong>
+          </div>
+          <div class="target-score">
+            <span>First to</span>
+            <label>
+              <input id="winningScore" type="number" min="1" max="25" value="5">
+              points
+            </label>
+          </div>
+          <div class="player-score" data-active-player="1">
+            <span id="playerTwoName">Player 2</span>
+            <strong id="playerTwoScore">0</strong>
+          </div>
+        </div>
+        <div class="mode-control" aria-label="Opponent">
+          <span>Opponent</span>
+          <label>
+            <input type="radio" name="opponentMode" value="human" checked>
+            Player 2
+          </label>
+          <label>
+            <input type="radio" name="opponentMode" value="computer">
+            Codex
+          </label>
+        </div>
+      </section>
+
+      <section class="table" aria-label="Game table">
+        <div class="turn-strip">
+          <div>
+            <p class="label">Current turn</p>
+            <h2 id="turnTitle">Player 1 sets the target</h2>
+          </div>
+          <div class="round-state" id="roundState">Roll 0 of 3</div>
+        </div>
+
+        <div class="dice-row" id="diceRow" aria-label="Dice"></div>
+
+        <div class="action-bar">
+          <button id="rollButton" class="primary" type="button">Roll dice</button>
+          <button id="stopButton" type="button" disabled>Stop and declare</button>
+          <button id="nextButton" type="button" hidden>Next round</button>
+          <button id="newMatchButton" type="button">New match</button>
+        </div>
+
+        <div class="status-grid">
+          <article>
+            <p class="label">Current roll</p>
+            <strong id="currentScore">Roll to begin</strong>
+          </article>
+          <article>
+            <p class="label">Target to beat</p>
+            <strong id="targetScore">No target set</strong>
+          </article>
+          <article>
+            <p class="label">Result</p>
+            <strong id="resultText">Set a target, then challenge it.</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="rules" aria-label="Rules">
+        <h2>Rules</h2>
+        <ul>
+          <li>Roll five dice up to three times.</li>
+          <li>After each roll, hold any dice and reroll the rest.</li>
+          <li>More matching dice wins. Ties go to higher face value, then fewer rolls.</li>
+          <li>An exact match is a push: no point, same starter leads again.</li>
+        </ul>
+      </section>
+    </main>
+
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>

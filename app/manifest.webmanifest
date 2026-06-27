@@ -1,0 +1,18 @@
+{
+  "name": "Five Dice Push",
+  "short_name": "Dice Push",
+  "description": "A local two-player dice game where multiples, face value, and fewer rolls decide the round.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f3ea",
+  "theme_color": "#1f6f5b",
+  "icons": [
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
