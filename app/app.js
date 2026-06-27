@@ -52,12 +52,12 @@ function rollDie() {
 }
 
 function rollDice() {
-  if (isComputerTurn() || state.roundOver || state.matchOver || state.rolls >= 3) return;
+  if (isComputerTurn() || state.roundOver || state.matchOver || state.rolls >= maxRollsForTurn()) return;
   performRoll();
 }
 
 function performRoll() {
-  if (state.roundOver || state.matchOver || state.rolls >= 3) return;
+  if (state.roundOver || state.matchOver || state.rolls >= maxRollsForTurn()) return;
 
   const rollingIndexes = [];
   state.dice = state.dice.map((die, index) => {
@@ -69,7 +69,7 @@ function performRoll() {
   state.message = state.phase === "leader" ? "Choose dice to hold or declare a target." : "Choose dice to hold or answer the target.";
   render(rollingIndexes);
 
-  if (state.rolls === 3 && !isComputerTurn()) {
+  if (state.rolls === maxRollsForTurn() && !isComputerTurn()) {
     window.setTimeout(() => declareScore(), 450);
   }
 }
@@ -163,6 +163,10 @@ function isComputerTurn() {
   return state.opponentMode === "computer" && state.active === 1 && !state.roundOver && !state.matchOver;
 }
 
+function maxRollsForTurn() {
+  return state.phase === "challenger" && state.target ? state.target.rolls : 3;
+}
+
 function formatScore(score) {
   if (!score) return "No target set";
   const faces = ["", "one", "two", "three", "four", "five", "six"];
@@ -189,12 +193,12 @@ function render(rollingIndexes = []) {
     : state.phase === "leader"
       ? `${playerName(state.active)} sets the target`
       : `${playerName(state.active)} challenges`;
-  roundState.textContent = `Roll ${state.rolls} of 3`;
+  roundState.textContent = `Roll ${state.rolls} of ${maxRollsForTurn()}`;
   currentScore.textContent = formatScore(bestScore());
   targetScore.textContent = formatScore(state.target);
   resultText.textContent = isComputerTurn() ? `${state.message} Codex is thinking.` : state.message;
 
-  rollButton.disabled = isComputerTurn() || state.roundOver || state.matchOver || state.rolls >= 3;
+  rollButton.disabled = isComputerTurn() || state.roundOver || state.matchOver || state.rolls >= maxRollsForTurn();
   stopButton.disabled = isComputerTurn() || state.rolls === 0 || state.roundOver || state.matchOver;
   nextButton.hidden = !state.roundOver || state.matchOver;
   winningScoreInput.disabled = state.scores[0] > 0 || state.scores[1] > 0 || state.rolls > 0 || Boolean(state.target);
@@ -239,7 +243,7 @@ function takeComputerAction() {
   }
 
   const score = bestScore();
-  if (state.rolls >= 3 || shouldComputerStop(score)) {
+  if (state.rolls >= maxRollsForTurn() || shouldComputerStop(score)) {
     declareScore();
     return;
   }
@@ -263,7 +267,7 @@ function shouldComputerStop(score) {
 }
 
 function computerCanStillChallenge(score) {
-  if (state.rolls >= 3) return false;
+  if (state.rolls >= maxRollsForTurn()) return false;
   if (compareScores(score, state.target) >= 0) return true;
 
   const highestPossible = {

@@ -27,6 +27,7 @@ The app is fully static and deploys from the `app` directory through GitHub Acti
 - Players roll five dice up to three times.
 - Player 2 can be another person or Codex.
 - After each roll, the player can hold any dice and reroll the rest.
+- The challenger gets only as many rolls as the target used.
 - More matching dice wins.
 - If the count is tied, higher face value wins.
 - If count and face are tied, fewer rolls wins.
