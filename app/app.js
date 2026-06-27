@@ -69,7 +69,7 @@ function performRoll() {
   state.message = state.phase === "leader" ? "Choose dice to hold or declare a target." : "Choose dice to hold or answer the target.";
   render(rollingIndexes);
 
-  if (state.rolls === 3) {
+  if (state.rolls === 3 && !isComputerTurn()) {
     window.setTimeout(() => declareScore(), 450);
   }
 }
@@ -165,8 +165,9 @@ function isComputerTurn() {
 
 function formatScore(score) {
   if (!score) return "No target set";
-  const face = score.face === 1 ? "one" : score.face === 2 ? "two" : score.face === 3 ? "three" : score.face === 4 ? "four" : score.face === 5 ? "five" : "six";
-  const pluralFace = score.count === 1 ? face : `${face}s`;
+  const faces = ["", "one", "two", "three", "four", "five", "six"];
+  const pluralFaces = ["", "ones", "twos", "threes", "fours", "fives", "sixes"];
+  const pluralFace = score.count === 1 ? faces[score.face] : pluralFaces[score.face];
   const rollWord = score.rolls === 1 ? "roll" : "rolls";
   return `${score.count} ${pluralFace} in ${score.rolls} ${rollWord}`;
 }
@@ -252,13 +253,32 @@ function takeComputerAction() {
 
 function shouldComputerStop(score) {
   if (state.phase === "challenger") {
-    return compareScores(score, state.target) >= 0;
+    return compareScores(score, state.target) >= 0 || !computerCanStillChallenge(score);
   }
 
   if (score.count >= 4) return true;
   if (score.count === 3 && score.face >= 5) return true;
   if (state.rolls === 2 && score.count >= 3) return true;
   return false;
+}
+
+function computerCanStillChallenge(score) {
+  if (state.rolls >= 3) return false;
+  if (compareScores(score, state.target) >= 0) return true;
+
+  const highestPossible = {
+    count: 5,
+    face: chooseComputerFace(score),
+    rolls: state.rolls + 1
+  };
+
+  if (compareScores(highestPossible, state.target) >= 0) return true;
+
+  if (state.target.count < 5) {
+    return true;
+  }
+
+  return state.target.face < 6;
 }
 
 function holdComputerDice(score) {
