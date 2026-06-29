@@ -1,16 +1,22 @@
-const diceRow = document.querySelector("#diceRow");
+const diceRows = [
+  document.querySelector("#youDiceRow"),
+  document.querySelector("#codexDiceRow")
+];
 const rollButton = document.querySelector("#rollButton");
 const stopButton = document.querySelector("#stopButton");
 const nextButton = document.querySelector("#nextButton");
 const newMatchButton = document.querySelector("#newMatchButton");
 const winningScoreInput = document.querySelector("#winningScore");
-const playerTwoName = document.querySelector("#playerTwoName");
-const opponentModeInputs = [...document.querySelectorAll("input[name='opponentMode']")];
 const playerScoreEls = [
   document.querySelector("#playerOneScore"),
   document.querySelector("#playerTwoScore")
 ];
 const playerCards = [...document.querySelectorAll(".player-score")];
+const diceSets = [...document.querySelectorAll(".dice-set")];
+const rollStateEls = [
+  document.querySelector("#youRollState"),
+  document.querySelector("#codexRollState")
+];
 const turnTitle = document.querySelector("#turnTitle");
 const roundState = document.querySelector("#roundState");
 const currentScore = document.querySelector("#currentScore");
@@ -27,13 +33,16 @@ function freshMatch() {
     active: 0,
     phase: "leader",
     rolls: 0,
-    dice: Array.from({ length: 5 }, () => ({ value: 1, held: false })),
+    diceSets: [freshDice(), freshDice()],
     target: null,
     roundOver: false,
     matchOver: false,
-    opponentMode: opponentMode(),
     message: "Set a target, then challenge it."
   };
+}
+
+function freshDice() {
+  return Array.from({ length: 5 }, () => ({ value: 1, held: false }));
 }
 
 function freshTurn(nextActive, phase, starter, target = null) {
@@ -41,7 +50,11 @@ function freshTurn(nextActive, phase, starter, target = null) {
   state.phase = phase;
   state.starter = starter;
   state.rolls = 0;
-  state.dice = Array.from({ length: 5 }, () => ({ value: 1, held: false }));
+  if (phase === "leader") {
+    state.diceSets = [freshDice(), freshDice()];
+  } else {
+    state.diceSets[nextActive] = freshDice();
+  }
   state.target = target;
   state.roundOver = false;
   state.message = phase === "leader" ? "Set a target, then challenge it." : "Beat or exactly match the target.";
@@ -52,7 +65,7 @@ function rollDie() {
 }
 
 function rollDice() {
-  if (isComputerTurn() || state.roundOver || state.matchOver || state.rolls >= maxRollsForTurn()) return;
+  if (!isHumanTurn() || state.roundOver || state.matchOver || state.rolls >= maxRollsForTurn()) return;
   performRoll();
 }
 
@@ -60,11 +73,11 @@ function performRoll() {
   if (state.roundOver || state.matchOver || state.rolls >= maxRollsForTurn()) return;
 
   const rollingIndexes = [];
-  state.dice = state.dice.map((die, index) => {
+  setActiveDice(activeDice().map((die, index) => {
     if (die.held && state.rolls > 0) return die;
     rollingIndexes.push(index);
     return { ...die, value: rollDie() };
-  });
+  }));
   state.rolls += 1;
   state.message = state.phase === "leader" ? "Choose dice to hold or declare a target." : "Choose dice to hold or answer the target.";
   render(rollingIndexes);
@@ -75,23 +88,30 @@ function performRoll() {
 }
 
 function toggleHold(index) {
-  if (isComputerTurn() || state.rolls === 0 || state.roundOver || state.matchOver) return;
-  state.dice[index].held = !state.dice[index].held;
+  if (!isHumanTurn() || state.rolls === 0 || state.roundOver || state.matchOver) return;
+  activeDice()[index].held = !activeDice()[index].held;
   render();
 }
 
-function bestScore() {
-  if (state.rolls === 0) return null;
+function activeDice() {
+  return state.diceSets[state.active];
+}
 
-  const counts = new Map();
-  for (const die of state.dice) {
-    counts.set(die.value, (counts.get(die.value) ?? 0) + 1);
-  }
+function setActiveDice(dice) {
+  state.diceSets[state.active] = dice;
+}
 
-  let best = { count: 0, face: 0, rolls: state.rolls };
-  for (const [face, count] of counts.entries()) {
+function bestScore(dice = activeDice(), rolls = state.rolls) {
+  if (rolls === 0) return null;
+
+  const wilds = dice.filter((die) => die.value === 2).length;
+  const scoringFaces = [1, 3, 4, 5, 6];
+  let best = { count: 0, face: 0, rolls, wilds };
+
+  for (const face of scoringFaces) {
+    const count = dice.filter((die) => die.value === face).length + wilds;
     if (count > best.count || (count === best.count && face > best.face)) {
-      best = { count, face, rolls: state.rolls };
+      best = { count, face, rolls, wilds };
     }
   }
   return best;
@@ -117,13 +137,13 @@ function declareScore() {
 
   const comparison = compareScores(score, state.target);
   if (comparison > 0) {
-    awardPoint(state.active, `${playerName(state.active)} beats ${formatScore(state.target)} with ${formatScore(score)}.`);
+    awardPoint(state.active, `${playerBeats(state.active)} ${formatScore(state.target)} with ${formatScore(score)}.`);
     state.starter = state.active;
   } else if (comparison === 0) {
     state.roundOver = true;
-    state.message = `Exact match. No point. ${playerName(state.starter)} starts again.`;
+    state.message = `Exact match. No point. ${playerStarts(state.starter)} again.`;
   } else {
-    awardPoint(state.starter, `${playerName(state.active)} falls short. ${playerName(state.starter)} wins the point.`);
+    awardPoint(state.starter, `${playerFallsShort(state.active)}. ${playerWinsPoint(state.starter)}.`);
   }
 
   render();
@@ -136,7 +156,7 @@ function awardPoint(player, message) {
 
   if (state.scores[player] >= winningScore()) {
     state.matchOver = true;
-    state.message = `${playerName(player)} wins the match, ${state.scores[0]} to ${state.scores[1]}.`;
+    state.message = `${playerWinsMatch(player)}, ${state.scores[0]} to ${state.scores[1]}.`;
   }
 }
 
@@ -151,16 +171,44 @@ function winningScore() {
   return Number.isFinite(parsed) ? Math.min(25, Math.max(1, parsed)) : 5;
 }
 
-function opponentMode() {
-  return opponentModeInputs.find((input) => input.checked)?.value ?? "human";
+function playerName(index) {
+  return index === 0 ? "You" : "Codex";
 }
 
-function playerName(index) {
-  return index === 1 && state.opponentMode === "computer" ? "Codex" : `Player ${index + 1}`;
+function playerSets(index) {
+  return index === 0 ? "You set the target" : "Codex sets the target";
+}
+
+function playerChallenges(index) {
+  return index === 0 ? "You challenge" : "Codex challenges";
+}
+
+function playerBeats(index) {
+  return index === 0 ? "You beat" : "Codex beats";
+}
+
+function playerFallsShort(index) {
+  return index === 0 ? "You fall short" : "Codex falls short";
+}
+
+function playerWinsPoint(index) {
+  return index === 0 ? "You win the point" : "Codex wins the point";
+}
+
+function playerWinsMatch(index) {
+  return index === 0 ? "You win the match" : "Codex wins the match";
+}
+
+function playerStarts(index) {
+  return index === 0 ? "You start" : "Codex starts";
 }
 
 function isComputerTurn() {
-  return state.opponentMode === "computer" && state.active === 1 && !state.roundOver && !state.matchOver;
+  return state.active === 1 && !state.roundOver && !state.matchOver;
+}
+
+function isHumanTurn() {
+  return state.active === 0 && !state.roundOver && !state.matchOver;
 }
 
 function maxRollsForTurn() {
@@ -178,7 +226,6 @@ function formatScore(score) {
 
 function render(rollingIndexes = []) {
   window.clearTimeout(aiTimer);
-  playerTwoName.textContent = playerName(1);
 
   playerScoreEls.forEach((el, index) => {
     el.textContent = state.scores[index];
@@ -187,39 +234,45 @@ function render(rollingIndexes = []) {
   playerCards.forEach((card, index) => {
     card.classList.toggle("is-active", index === state.active && !state.matchOver);
   });
+  diceSets.forEach((set, index) => {
+    set.classList.toggle("is-active", index === state.active && !state.matchOver);
+  });
+  rollStateEls.forEach((el, index) => {
+    el.textContent = index === state.active && !state.roundOver ? `Roll ${state.rolls}` : "Ready";
+  });
 
   turnTitle.textContent = state.matchOver
     ? "Match complete"
     : state.phase === "leader"
-      ? `${playerName(state.active)} sets the target`
-      : `${playerName(state.active)} challenges`;
+      ? playerSets(state.active)
+      : playerChallenges(state.active);
   roundState.textContent = `Roll ${state.rolls} of ${maxRollsForTurn()}`;
   currentScore.textContent = formatScore(bestScore());
   targetScore.textContent = formatScore(state.target);
   resultText.textContent = isComputerTurn() ? `${state.message} Codex is thinking.` : state.message;
 
-  rollButton.disabled = isComputerTurn() || state.roundOver || state.matchOver || state.rolls >= maxRollsForTurn();
-  stopButton.disabled = isComputerTurn() || state.rolls === 0 || state.roundOver || state.matchOver;
+  rollButton.disabled = !isHumanTurn() || state.roundOver || state.matchOver || state.rolls >= maxRollsForTurn();
+  stopButton.disabled = !isHumanTurn() || state.rolls === 0 || state.roundOver || state.matchOver;
   nextButton.hidden = !state.roundOver || state.matchOver;
   winningScoreInput.disabled = state.scores[0] > 0 || state.scores[1] > 0 || state.rolls > 0 || Boolean(state.target);
-  opponentModeInputs.forEach((input) => {
-    input.disabled = winningScoreInput.disabled;
-  });
 
-  diceRow.replaceChildren(...state.dice.map((die, index) => dieButton(die, index, rollingIndexes.includes(index))));
+  diceRows.forEach((row, playerIndex) => {
+    const activeRollingIndexes = playerIndex === state.active ? rollingIndexes : [];
+    row.replaceChildren(...state.diceSets[playerIndex].map((die, index) => dieButton(die, index, activeRollingIndexes.includes(index), playerIndex)));
+  });
 
   if (isComputerTurn()) {
     aiTimer = window.setTimeout(takeComputerAction, state.rolls === 0 ? 650 : 900);
   }
 }
 
-function dieButton(die, index, isRolling) {
+function dieButton(die, index, isRolling, playerIndex) {
   const button = document.createElement("button");
   button.type = "button";
-  button.className = `die${die.held ? " is-held" : ""}${isRolling ? " is-rolling" : ""}`;
+  button.className = `die${die.held ? " is-held" : ""}${isRolling ? " is-rolling" : ""}${die.value === 2 ? " is-wild" : ""}`;
   button.dataset.value = die.value;
-  button.disabled = isComputerTurn() || state.rolls === 0 || state.roundOver || state.matchOver;
-  button.setAttribute("aria-label", `${die.value}, ${die.held ? "held" : "available"}`);
+  button.disabled = playerIndex !== 0 || !isHumanTurn() || state.rolls === 0 || state.roundOver || state.matchOver;
+  button.setAttribute("aria-label", `${playerName(playerIndex)} die ${die.value}${die.value === 2 ? ", wild" : ""}, ${die.held ? "held" : "available"}`);
   button.setAttribute("aria-pressed", die.held ? "true" : "false");
   button.addEventListener("click", () => toggleHold(index));
 
@@ -287,27 +340,15 @@ function computerCanStillChallenge(score) {
 
 function holdComputerDice(score) {
   const faceToHold = chooseComputerFace(score);
-  state.dice = state.dice.map((die) => ({
+  setActiveDice(activeDice().map((die) => ({
     ...die,
-    held: die.value === faceToHold
-  }));
-  state.message = `${playerName(state.active)} holds ${faceToHold}s and rolls the rest.`;
+    held: die.value === faceToHold || die.value === 2
+  })));
+  state.message = `${playerName(state.active)} holds ${faceToHold}s and wild 2s.`;
 }
 
 function chooseComputerFace(score) {
-  const counts = new Map();
-  for (const die of state.dice) {
-    counts.set(die.value, (counts.get(die.value) ?? 0) + 1);
-  }
-
-  let choice = score.face;
-  for (const [face, count] of counts.entries()) {
-    const choiceCount = counts.get(choice) ?? 0;
-    if (count > choiceCount || (count === choiceCount && face > choice)) {
-      choice = face;
-    }
-  }
-  return choice;
+  return score.face;
 }
 
 rollButton.addEventListener("click", rollDice);
@@ -317,13 +358,6 @@ newMatchButton.addEventListener("click", () => {
   state = freshMatch();
   winningScoreInput.disabled = false;
   render();
-});
-opponentModeInputs.forEach((input) => {
-  input.addEventListener("change", () => {
-    state = freshMatch();
-    state.opponentMode = opponentMode();
-    render();
-  });
 });
 winningScoreInput.addEventListener("change", () => {
   winningScoreInput.value = winningScore();

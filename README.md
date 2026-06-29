@@ -25,7 +25,8 @@ The app is fully static and deploys from the `app` directory through GitHub Acti
 ## Rules
 
 - Players roll five dice up to three times.
-- Player 2 can be another person or Codex.
+- The game is you against Codex.
+- Twos are wild and count toward the strongest multiple.
 - After each roll, the player can hold any dice and reroll the rest.
 - The challenger gets only as many rolls as the target used.
 - More matching dice wins.

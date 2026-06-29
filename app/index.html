@@ -19,7 +19,7 @@
         </div>
         <div class="score-grid">
           <div class="player-score" data-active-player="0">
-            <span id="playerOneName">Player 1</span>
+            <span id="playerOneName">You</span>
             <strong id="playerOneScore">0</strong>
           </div>
           <div class="target-score">
@@ -30,20 +30,9 @@
             </label>
           </div>
           <div class="player-score" data-active-player="1">
-            <span id="playerTwoName">Player 2</span>
+            <span id="playerTwoName">Codex</span>
             <strong id="playerTwoScore">0</strong>
           </div>
-        </div>
-        <div class="mode-control" aria-label="Opponent">
-          <span>Opponent</span>
-          <label>
-            <input type="radio" name="opponentMode" value="human" checked>
-            Player 2
-          </label>
-          <label>
-            <input type="radio" name="opponentMode" value="computer">
-            Codex
-          </label>
         </div>
       </section>
 
@@ -56,7 +45,22 @@
           <div class="round-state" id="roundState">Roll 0 of 3</div>
         </div>
 
-        <div class="dice-row" id="diceRow" aria-label="Dice"></div>
+        <div class="dice-sets" aria-label="Dice">
+          <section class="dice-set you-set" data-dice-player="0" aria-label="Your dice">
+            <div class="dice-set-header">
+              <span>You</span>
+              <strong id="youRollState">Roll 0</strong>
+            </div>
+            <div class="dice-row" id="youDiceRow"></div>
+          </section>
+          <section class="dice-set codex-set" data-dice-player="1" aria-label="Codex dice">
+            <div class="dice-set-header">
+              <span>Codex</span>
+              <strong id="codexRollState">Roll 0</strong>
+            </div>
+            <div class="dice-row" id="codexDiceRow"></div>
+          </section>
+        </div>
 
         <div class="action-bar">
           <button id="rollButton" class="primary" type="button">Roll dice</button>
@@ -85,6 +89,7 @@
         <summary>Rules</summary>
         <ul>
           <li>Roll five dice up to three times.</li>
+          <li>Twos are wild and count toward the strongest multiple.</li>
           <li>After each roll, hold any dice and reroll the rest.</li>
           <li>The challenger gets only as many rolls as the target used.</li>
           <li>More matching dice wins. Ties go to higher face value, then fewer rolls.</li>
