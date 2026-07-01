@@ -1,4 +1,4 @@
-const CACHE_NAME = "five-dice-push-v7";
+const CACHE_NAME = "five-dice-push-v8";
 const ASSETS = [
   "./",
   "./index.html",

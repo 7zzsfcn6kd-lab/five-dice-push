@@ -11,10 +11,6 @@ const playerScoreEls = [
   document.querySelector("#playerOneScore"),
   document.querySelector("#playerTwoScore")
 ];
-const playerPipEls = [
-  document.querySelector("#playerOnePips"),
-  document.querySelector("#playerTwoPips")
-];
 const playerCards = [...document.querySelectorAll(".player-score")];
 const diceSets = [...document.querySelectorAll(".dice-set")];
 const rollStateEls = [
@@ -255,9 +251,6 @@ function render(rollingIndexes = []) {
   playerScoreEls.forEach((el, index) => {
     el.textContent = state.scores[index];
   });
-  playerPipEls.forEach((el, index) => {
-    renderScorePips(el, state.scores[index]);
-  });
 
   playerCards.forEach((card, index) => {
     card.classList.toggle("is-active", index === state.active && !state.matchOver);
@@ -320,16 +313,6 @@ function dieButton(die, index, isRolling, playerIndex, isScoring) {
   }
   button.append(pipGrid);
   return button;
-}
-
-function renderScorePips(container, score) {
-  const total = winningScore();
-  const visible = Math.min(total, 10);
-  container.replaceChildren(...Array.from({ length: visible }, (_, index) => {
-    const pip = document.createElement("span");
-    pip.className = `score-dot${index < score ? " is-filled" : ""}`;
-    return pip;
-  }));
 }
 
 function renderRollProgress() {
