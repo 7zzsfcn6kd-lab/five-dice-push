@@ -1,6 +1,6 @@
 :root {
   color-scheme: light;
-  --bg: #f7f3ea;
+  --bg: #e1eadf;
   --surface: #fffdf8;
   --ink: #19211f;
   --muted: #5e6964;
@@ -21,8 +21,8 @@ body {
   min-height: 100vh;
   margin: 0;
   background:
-    linear-gradient(140deg, rgba(31, 111, 91, 0.16), transparent 34%),
-    radial-gradient(circle at top right, rgba(217, 152, 47, 0.22), transparent 30%),
+    linear-gradient(140deg, rgba(31, 111, 91, 0.22), transparent 36%),
+    radial-gradient(circle at top right, rgba(217, 152, 47, 0.24), transparent 30%),
     var(--bg);
   color: var(--ink);
 }
@@ -54,6 +54,13 @@ button.primary {
   color: white;
 }
 
+button.declare-ready {
+  border-color: var(--gold);
+  background: var(--gold);
+  color: #191510;
+  box-shadow: 0 0 0 3px rgba(217, 152, 47, 0.18);
+}
+
 .app-shell {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
@@ -75,34 +82,6 @@ button.primary {
   align-items: end;
   border-radius: 8px 8px 0 0;
   padding: 28px;
-}
-
-.mode-control {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  border-top: 1px solid var(--line);
-  padding-top: 16px;
-}
-
-.mode-control span {
-  color: var(--muted);
-  font-size: 0.9rem;
-  font-weight: 800;
-}
-
-.mode-control label {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: white;
-  padding: 0 14px;
-  font-weight: 800;
 }
 
 .eyebrow,
@@ -148,6 +127,7 @@ h1 {
 .player-score {
   display: grid;
   align-content: space-between;
+  gap: 8px;
 }
 
 .player-score span,
@@ -160,6 +140,30 @@ h1 {
 .player-score strong {
   font-size: 2.8rem;
   line-height: 1;
+}
+
+.score-pips,
+.roll-progress {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.score-dot,
+.roll-dot {
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #d8d2c5;
+}
+
+.score-dot {
+  width: 10px;
+  height: 10px;
+}
+
+.score-dot.is-filled {
+  background: var(--accent);
 }
 
 .player-score.is-active {
@@ -195,16 +199,53 @@ h1 {
   padding: 28px;
 }
 
-.turn-strip {
+.phase-banner {
   display: flex;
   gap: 16px;
   justify-content: space-between;
   align-items: center;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: #f3faf5;
+  padding: 16px;
+  box-shadow: inset 0 0 0 2px rgba(31, 111, 91, 0.08);
 }
 
-.turn-strip h2 {
+.phase-banner h2 {
   margin-bottom: 0;
-  font-size: 1.45rem;
+  font-size: 1.55rem;
+  text-transform: uppercase;
+}
+
+.phase-subtext {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-weight: 750;
+}
+
+.roll-widget {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
+.roll-dot {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #bfb8aa;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.roll-dot.is-filled {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+}
+
+.roll-dot.is-next {
+  border-color: var(--gold);
 }
 
 .round-state {
@@ -231,7 +272,7 @@ h1 {
 .dice-set {
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.82);
   padding: 12px;
 }
 
@@ -269,10 +310,10 @@ h1 {
   min-width: 0;
   border: 3px solid #241f1c;
   border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 12px 0 rgba(25, 33, 31, 0.12);
+  background: linear-gradient(145deg, #ffffff, #f0eee8);
+  box-shadow: 0 12px 0 rgba(25, 33, 31, 0.12), 0 18px 28px rgba(25, 33, 31, 0.14);
   cursor: pointer;
-  transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+  transition: transform 150ms ease, border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
 }
 
 .die:disabled {
@@ -283,7 +324,25 @@ h1 {
 .die.is-held {
   border-color: var(--gold);
   background: #fff6dc;
-  transform: translateY(-6px);
+  box-shadow: 0 0 0 4px rgba(217, 152, 47, 0.24), 0 14px 0 rgba(217, 152, 47, 0.22);
+  transform: translateY(-7px) scale(1.04);
+}
+
+.die.is-held::after {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  content: "HELD";
+  border-radius: 999px;
+  background: var(--gold);
+  color: #171311;
+  padding: 2px 5px;
+  font-size: 0.56rem;
+  font-weight: 950;
+}
+
+.die.is-scoring:not(.is-held) {
+  box-shadow: 0 0 0 3px rgba(31, 111, 91, 0.16), 0 12px 0 rgba(25, 33, 31, 0.12), 0 18px 28px rgba(25, 33, 31, 0.14);
 }
 
 .die.is-wild {
@@ -292,7 +351,7 @@ h1 {
 }
 
 .codex-set .die {
-  background: #f2f8fa;
+  background: linear-gradient(145deg, #f7fbfc, #dfecef);
   border-color: #244a57;
 }
 
@@ -326,6 +385,13 @@ h1 {
   background: #102c35;
 }
 
+.codex-line {
+  margin: -2px 0 10px;
+  color: #355865;
+  font-size: 0.92rem;
+  font-weight: 750;
+}
+
 .die[data-value="1"] .pip:nth-child(5),
 .die[data-value="2"] .pip:nth-child(1),
 .die[data-value="2"] .pip:nth-child(9),
@@ -356,24 +422,51 @@ h1 {
   gap: 10px;
 }
 
-.status-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-top: 24px;
-}
-
-.status-grid article {
-  min-height: 108px;
+.game-status {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: white;
-  padding: 16px;
+  margin-top: 24px;
+  padding: 18px;
 }
 
-.status-grid strong {
+.status-primary strong {
   display: block;
-  font-size: 1.25rem;
+  font-size: clamp(1.5rem, 4vw, 2.8rem);
+  line-height: 1.05;
+}
+
+.game-status.has-hand {
+  border-color: var(--accent);
+}
+
+.game-status.is-final {
+  border-color: var(--gold);
+  box-shadow: inset 0 0 0 2px rgba(217, 152, 47, 0.18);
+}
+
+.status-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0 0;
+}
+
+.status-details div {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.status-details dt {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.status-details dd {
+  margin: 4px 0 0;
+  font-weight: 850;
   line-height: 1.25;
 }
 
@@ -412,7 +505,7 @@ h1 {
     transform: rotate(-8deg) scale(0.96);
   }
   50% {
-    transform: rotate(9deg) scale(1.03);
+    transform: rotate(9deg) translateY(-8px) scale(1.05);
   }
   100% {
     transform: rotate(0) scale(1);
@@ -436,7 +529,7 @@ h1 {
   }
 
   .score-grid,
-  .status-grid,
+  .status-details,
   .rules ul {
     grid-template-columns: 1fr;
   }
@@ -450,7 +543,7 @@ h1 {
     gap: 10px;
   }
 
-  .turn-strip {
+  .phase-banner {
     align-items: flex-start;
     flex-direction: column;
   }
@@ -529,30 +622,29 @@ h1 {
     padding: 4px;
   }
 
-  .mode-control {
-    gap: 7px;
-    padding-top: 10px;
-  }
-
-  .mode-control span {
-    flex: 1 0 100%;
-    font-size: 0.78rem;
-  }
-
-  .mode-control label {
-    min-height: 34px;
-    padding: 0 11px;
-    font-size: 0.85rem;
-  }
-
-  .turn-strip {
+  .phase-banner {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 10px;
+    padding: 10px;
   }
 
-  .turn-strip h2 {
+  .phase-banner h2 {
     font-size: 1.05rem;
+  }
+
+  .phase-subtext {
+    font-size: 0.82rem;
+  }
+
+  .roll-widget {
+    gap: 6px;
+  }
+
+  .roll-dot {
+    width: 22px;
+    height: 22px;
+    font-size: 0.68rem;
   }
 
   .round-state {
@@ -584,6 +676,18 @@ h1 {
     box-shadow: 0 6px 0 rgba(25, 33, 31, 0.12);
   }
 
+  .die.is-held {
+    box-shadow: 0 0 0 3px rgba(217, 152, 47, 0.22), 0 8px 0 rgba(217, 152, 47, 0.22);
+    transform: translateY(-4px) scale(1.03);
+  }
+
+  .die.is-held::after {
+    top: 3px;
+    right: 3px;
+    padding: 1px 4px;
+    font-size: 0.48rem;
+  }
+
   .action-bar {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -601,42 +705,70 @@ h1 {
     grid-column: 1 / -1;
   }
 
-  .status-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 7px;
+  .game-status {
     margin-top: 12px;
+    padding: 11px;
   }
 
-  .status-grid article {
-    min-height: 76px;
-    padding: 9px;
+  .status-primary strong {
+    font-size: 1.24rem;
   }
 
-  .status-grid strong {
-    font-size: 0.86rem;
+  .status-details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .status-details div {
+    padding-top: 8px;
+  }
+
+  .status-details dd {
+    font-size: 0.78rem;
     line-height: 1.18;
   }
 
   .rules {
-    padding-top: 11px;
-    padding-bottom: 11px;
+    display: none;
+  }
+}
+
+@media (max-width: 380px) {
+  h1 {
+    display: none;
   }
 
-  .rules summary {
-    margin-bottom: 0;
-    font-size: 0.95rem;
-  }
-
-  .rules[open] summary {
-    margin-bottom: 10px;
-  }
-
-  .rules ul {
+  .scoreboard {
     gap: 8px;
   }
 
-  .rules li {
-    font-size: 0.82rem;
-    line-height: 1.2;
+  .player-score,
+  .target-score {
+    min-height: 58px;
+    padding: 8px;
+  }
+
+  .player-score strong {
+    font-size: 1.55rem;
+  }
+
+  .score-dot {
+    width: 8px;
+    height: 8px;
+  }
+
+  .phase-subtext,
+  .dice-set-header,
+  .codex-line {
+    display: none;
+  }
+
+  .dice-sets {
+    gap: 5px;
+  }
+
+  .game-status {
+    margin-top: 9px;
   }
 }

@@ -11,17 +11,25 @@ const playerScoreEls = [
   document.querySelector("#playerOneScore"),
   document.querySelector("#playerTwoScore")
 ];
+const playerPipEls = [
+  document.querySelector("#playerOnePips"),
+  document.querySelector("#playerTwoPips")
+];
 const playerCards = [...document.querySelectorAll(".player-score")];
 const diceSets = [...document.querySelectorAll(".dice-set")];
 const rollStateEls = [
   document.querySelector("#youRollState"),
   document.querySelector("#codexRollState")
 ];
+const rollProgress = document.querySelector("#rollProgress");
 const turnTitle = document.querySelector("#turnTitle");
+const phaseSubtext = document.querySelector("#phaseSubtext");
 const roundState = document.querySelector("#roundState");
 const currentScore = document.querySelector("#currentScore");
 const targetScore = document.querySelector("#targetScore");
 const resultText = document.querySelector("#resultText");
+const codexLine = document.querySelector("#codexLine");
+const gameStatus = document.querySelector("#gameStatus");
 
 let state = freshMatch();
 let aiTimer = null;
@@ -33,10 +41,12 @@ function freshMatch() {
     active: 0,
     phase: "leader",
     rolls: 0,
+    rollCounts: [0, 0],
     diceSets: [freshDice(), freshDice()],
     target: null,
     roundOver: false,
     matchOver: false,
+    codexMood: "Waiting for your target.",
     message: "Set a target, then challenge it."
   };
 }
@@ -52,11 +62,18 @@ function freshTurn(nextActive, phase, starter, target = null) {
   state.rolls = 0;
   if (phase === "leader") {
     state.diceSets = [freshDice(), freshDice()];
+    state.rollCounts = [0, 0];
   } else {
     state.diceSets[nextActive] = freshDice();
+    state.rollCounts[nextActive] = 0;
   }
   state.target = target;
   state.roundOver = false;
+  if (phase === "leader" && nextActive === 1) {
+    state.codexMood = "I will set the bar.";
+  } else if (nextActive === 1 && !state.codexMood) {
+    state.codexMood = "I will take that challenge.";
+  }
   state.message = phase === "leader" ? "Set a target, then challenge it." : "Beat or exactly match the target.";
 }
 
@@ -79,6 +96,8 @@ function performRoll() {
     return { ...die, value: rollDie() };
   }));
   state.rolls += 1;
+  state.rollCounts[state.active] = state.rolls;
+  state.codexMood = isComputerTurn() ? codexRollLine() : state.codexMood;
   state.message = state.phase === "leader" ? "Choose dice to hold or declare a target." : "Choose dice to hold or answer the target.";
   render(rollingIndexes);
 
@@ -130,6 +149,9 @@ function declareScore() {
 
   if (state.phase === "leader") {
     state.target = score;
+    if (state.active === 0) {
+      state.codexMood = compareTargetTone(score);
+    }
     freshTurn(1 - state.starter, "challenger", state.starter, score);
     render();
     return;
@@ -137,12 +159,15 @@ function declareScore() {
 
   const comparison = compareScores(score, state.target);
   if (comparison > 0) {
+    state.codexMood = state.active === 1 ? "I found a better hand." : "That was a strong answer.";
     awardPoint(state.active, `${playerBeats(state.active)} ${formatScore(state.target)} with ${formatScore(score)}.`);
     state.starter = state.active;
   } else if (comparison === 0) {
     state.roundOver = true;
+    state.codexMood = "A push. Same starter.";
     state.message = `Exact match. No point. ${playerStarts(state.starter)} again.`;
   } else {
+    state.codexMood = state.starter === 1 ? "I will take the point." : "Not enough this time.";
     awardPoint(state.starter, `${playerFallsShort(state.active)}. ${playerWinsPoint(state.starter)}.`);
   }
 
@@ -230,6 +255,9 @@ function render(rollingIndexes = []) {
   playerScoreEls.forEach((el, index) => {
     el.textContent = state.scores[index];
   });
+  playerPipEls.forEach((el, index) => {
+    renderScorePips(el, state.scores[index]);
+  });
 
   playerCards.forEach((card, index) => {
     card.classList.toggle("is-active", index === state.active && !state.matchOver);
@@ -246,19 +274,26 @@ function render(rollingIndexes = []) {
     : state.phase === "leader"
       ? playerSets(state.active)
       : playerChallenges(state.active);
+  phaseSubtext.textContent = phaseLine();
   roundState.textContent = `Roll ${state.rolls} of ${maxRollsForTurn()}`;
+  renderRollProgress();
   currentScore.textContent = formatScore(bestScore());
   targetScore.textContent = formatScore(state.target);
   resultText.textContent = isComputerTurn() ? `${state.message} Codex is thinking.` : state.message;
+  codexLine.textContent = isComputerTurn() ? `${state.codexMood} Thinking...` : state.codexMood;
+  gameStatus.classList.toggle("has-hand", state.rolls > 0);
+  gameStatus.classList.toggle("is-final", state.roundOver || state.matchOver);
 
   rollButton.disabled = !isHumanTurn() || state.roundOver || state.matchOver || state.rolls >= maxRollsForTurn();
   stopButton.disabled = !isHumanTurn() || state.rolls === 0 || state.roundOver || state.matchOver;
+  stopButton.classList.toggle("declare-ready", !stopButton.disabled);
   nextButton.hidden = !state.roundOver || state.matchOver;
   winningScoreInput.disabled = state.scores[0] > 0 || state.scores[1] > 0 || state.rolls > 0 || Boolean(state.target);
 
   diceRows.forEach((row, playerIndex) => {
     const activeRollingIndexes = playerIndex === state.active ? rollingIndexes : [];
-    row.replaceChildren(...state.diceSets[playerIndex].map((die, index) => dieButton(die, index, activeRollingIndexes.includes(index), playerIndex)));
+    const score = bestScore(state.diceSets[playerIndex], state.rollCounts[playerIndex]);
+    row.replaceChildren(...state.diceSets[playerIndex].map((die, index) => dieButton(die, index, activeRollingIndexes.includes(index), playerIndex, isScoringDie(die, score))));
   });
 
   if (isComputerTurn()) {
@@ -266,10 +301,10 @@ function render(rollingIndexes = []) {
   }
 }
 
-function dieButton(die, index, isRolling, playerIndex) {
+function dieButton(die, index, isRolling, playerIndex, isScoring) {
   const button = document.createElement("button");
   button.type = "button";
-  button.className = `die${die.held ? " is-held" : ""}${isRolling ? " is-rolling" : ""}${die.value === 2 ? " is-wild" : ""}`;
+  button.className = `die${die.held ? " is-held" : ""}${isRolling ? " is-rolling" : ""}${die.value === 2 ? " is-wild" : ""}${isScoring ? " is-scoring" : ""}`;
   button.dataset.value = die.value;
   button.disabled = playerIndex !== 0 || !isHumanTurn() || state.rolls === 0 || state.roundOver || state.matchOver;
   button.setAttribute("aria-label", `${playerName(playerIndex)} die ${die.value}${die.value === 2 ? ", wild" : ""}, ${die.held ? "held" : "available"}`);
@@ -285,6 +320,50 @@ function dieButton(die, index, isRolling, playerIndex) {
   }
   button.append(pipGrid);
   return button;
+}
+
+function renderScorePips(container, score) {
+  const total = winningScore();
+  const visible = Math.min(total, 10);
+  container.replaceChildren(...Array.from({ length: visible }, (_, index) => {
+    const pip = document.createElement("span");
+    pip.className = `score-dot${index < score ? " is-filled" : ""}`;
+    return pip;
+  }));
+}
+
+function renderRollProgress() {
+  const max = maxRollsForTurn();
+  rollProgress.replaceChildren(...Array.from({ length: max }, (_, index) => {
+    const step = document.createElement("span");
+    step.className = `roll-dot${index < state.rolls ? " is-filled" : ""}${index === state.rolls ? " is-next" : ""}`;
+    step.textContent = String(index + 1);
+    return step;
+  }));
+}
+
+function phaseLine() {
+  if (state.matchOver) return "Match complete.";
+  if (state.roundOver) return "Round complete.";
+  if (state.phase === "leader") return state.active === 0 ? "Set a target for Codex to chase." : "Codex is setting the target.";
+  return state.active === 0 ? `Beat ${formatScore(state.target)}.` : `Codex must beat ${formatScore(state.target)}.`;
+}
+
+function isScoringDie(die, score) {
+  if (!score || state.rolls === 0) return false;
+  return die.value === score.face || die.value === 2;
+}
+
+function codexRollLine() {
+  const lines = ["Let us see what the dice say.", "Looking for pressure.", "I can work with this.", "The wilds matter now."];
+  return lines[Math.floor(Math.random() * lines.length)];
+}
+
+function compareTargetTone(score) {
+  if (score.count >= 5) return "That is a monster target.";
+  if (score.count >= 4) return "Bold target.";
+  if (score.face >= 6) return "Sixes on the board. Noted.";
+  return "I will take that challenge.";
 }
 
 function takeComputerAction() {
@@ -344,6 +423,7 @@ function holdComputerDice(score) {
     ...die,
     held: die.value === faceToHold || die.value === 2
   })));
+  state.codexMood = "Holding the strongest set.";
   state.message = `${playerName(state.active)} holds ${faceToHold}s and wild 2s.`;
 }
 

@@ -21,6 +21,7 @@
           <div class="player-score" data-active-player="0">
             <span id="playerOneName">You</span>
             <strong id="playerOneScore">0</strong>
+            <div class="score-pips" id="playerOnePips" aria-hidden="true"></div>
           </div>
           <div class="target-score">
             <span>First to</span>
@@ -32,17 +33,22 @@
           <div class="player-score" data-active-player="1">
             <span id="playerTwoName">Codex</span>
             <strong id="playerTwoScore">0</strong>
+            <div class="score-pips" id="playerTwoPips" aria-hidden="true"></div>
           </div>
         </div>
       </section>
 
       <section class="table" aria-label="Game table">
-        <div class="turn-strip">
+        <div class="phase-banner">
           <div>
             <p class="label">Current turn</p>
-            <h2 id="turnTitle">Player 1 sets the target</h2>
+            <h2 id="turnTitle">You set the target</h2>
+            <p class="phase-subtext" id="phaseSubtext">Roll to open the round.</p>
           </div>
-          <div class="round-state" id="roundState">Roll 0 of 3</div>
+          <div class="roll-widget">
+            <div class="roll-progress" id="rollProgress" aria-label="Roll progress"></div>
+            <strong class="round-state" id="roundState">Roll 0 of 3</strong>
+          </div>
         </div>
 
         <div class="dice-sets" aria-label="Dice">
@@ -58,6 +64,7 @@
               <span>Codex</span>
               <strong id="codexRollState">Roll 0</strong>
             </div>
+            <p class="codex-line" id="codexLine">Waiting for your target.</p>
             <div class="dice-row" id="codexDiceRow"></div>
           </section>
         </div>
@@ -69,20 +76,22 @@
           <button id="newMatchButton" type="button">New match</button>
         </div>
 
-        <div class="status-grid">
-          <article>
+        <article class="game-status" id="gameStatus">
+          <div class="status-primary">
             <p class="label">Current roll</p>
             <strong id="currentScore">Roll to begin</strong>
-          </article>
-          <article>
-            <p class="label">Target to beat</p>
-            <strong id="targetScore">No target set</strong>
-          </article>
-          <article>
-            <p class="label">Result</p>
-            <strong id="resultText">Set a target, then challenge it.</strong>
-          </article>
-        </div>
+          </div>
+          <dl class="status-details">
+            <div>
+              <dt>Target</dt>
+              <dd id="targetScore">No target set</dd>
+            </div>
+            <div>
+              <dt>Result</dt>
+              <dd id="resultText">Set a target, then challenge it.</dd>
+            </div>
+          </dl>
+        </article>
       </section>
 
       <details class="rules" aria-label="Rules">
